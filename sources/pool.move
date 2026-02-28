@@ -4,6 +4,7 @@ module aqua_dex::pool {
     use sui::coin::{Self, Coin};
     use sui::balance::{Self, Balance};
     use sui::math::{Self};
+    use aqua_dex::events::{Self};
 
 
     public struct Pool<phantom T0, phantom T1> has key, store {
@@ -34,6 +35,7 @@ module aqua_dex::pool {
             reserve_b,
             lp_supply
         };
+        events::emit_pool_created(object::id(&pool));
 
         transfer::public_share_object(pool);
     }
