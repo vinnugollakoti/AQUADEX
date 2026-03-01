@@ -3,9 +3,10 @@ module aqua_dex::liquidity{
 
     use sui::coin::{Self, Coin};
 
-    use aqua_dex::lp_token::{Self, LP_TOKEN};
+    use aqua_dex::lp_token::{Self, LPToken};
     use aqua_dex::pool::{Self, Pool};
     use sui::balance::{Balance};
+    use aqua_dex::lp_token::LPTokenCap;
     use aqua_dex::events::{Self};
     use sui::event;
 
@@ -14,8 +15,9 @@ module aqua_dex::liquidity{
         pool: &mut Pool<T0, T1>,
         coin_a: Coin<T0>,
         coin_b: Coin<T1>,
+        cap: &mut LPTokenCap<T0, T1>,
         ctx: &mut TxContext
-    ): Coin<LP_TOKEN> {
+    ): Coin<LPToken<T0, T1>> {
 
         let amount_a = coin::value(&coin_a);
         let amount_b = coin::value(&coin_b);
@@ -47,7 +49,7 @@ module aqua_dex::liquidity{
 
 
         pool::increase_lp_supply<T0, T1>(pool, lp_to_mint);
-        let lp_coin = pool::mint_lp(pool, lp_to_mint, ctx);
+        let lp_coin = lp_token::mint_lp_token<T0, T1>(cap, lp_to_mint, ctx);
 
         events::emit_add_liquidity(
             object::id(pool),
@@ -64,9 +66,10 @@ module aqua_dex::liquidity{
         full_liquidity: bool,
         amount_a: u64,
         amount_b: u64,
-        lp_coin: Coin<LP_TOKEN>,
+        lp_coin: Coin<LPToken<T0, T1>>,
+        cap: &mut LPTokenCap<T0, T1>,
         ctx: &mut TxContext
-    ): (Balance<T0>, Balance<T1>, Option<Coin<LP_TOKEN>>) {
+    ): (Balance<T0>, Balance<T1>, Option<Coin<LPToken<T0, T1>>>) {
         let mut lp_coin = lp_coin;
         let lp_amount = coin::value(&lp_coin);
 
@@ -78,7 +81,7 @@ module aqua_dex::liquidity{
         let position_amount_b = lp_amount * reserve_b / (total_lp as u64);
 
         if (full_liquidity) {
-            pool::burn_lp(pool, lp_coin);
+            lp_token::burn_lp_token(cap, lp_coin);
 
             pool::decrease_lp_supply<T0, T1>(pool, (lp_amount as u128));
 
@@ -86,7 +89,7 @@ module aqua_dex::liquidity{
             let balance_b = pool::remove_reserve_b<T0, T1>(pool, position_amount_b);
 
             events::emit_remove_liquidity(object::id(pool), position_amount_a, position_amount_b, lp_amount);
-            (balance_a, balance_b, option::none<Coin<LP_TOKEN>>())
+            (balance_a, balance_b, option::none<Coin<LPToken<T0, T1>>>())
         } else {
             assert!(position_amount_a >= amount_a && position_amount_b >= amount_b, 480);
             assert!(reserve_a > 0 && reserve_b > 0, 481);
@@ -98,7 +101,7 @@ module aqua_dex::liquidity{
             
             let burn_lp = coin::split( &mut lp_coin, burn_amount, ctx);
 
-            pool::burn_lp(pool, burn_lp);
+            lp_token::burn_lp_token(cap, burn_lp);
             pool::decrease_lp_supply(pool, burn_amount as u128);
 
             let balance_a = pool::remove_reserve_a<T0, T1>(pool, amount_a);
@@ -106,6 +109,6 @@ module aqua_dex::liquidity{
 
             events::emit_remove_liquidity(object::id(pool), amount_a, amount_b, burn_amount);
             (balance_a, balance_b, option::some(lp_coin))
-        }  
-    }   
+        }
+    }
 }
