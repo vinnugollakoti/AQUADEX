@@ -1,56 +1,60 @@
 module aqua_dex::lp_token {
 
-
     use sui::object::{Self, UID};
     use sui::coin::{Self, TreasuryCap, Coin};
-    use std::u64;
+    use sui::url;
+    use std::option;
 
+    /// One-time witness
+    public struct LP_TOKEN has drop {}
 
-    public struct LPToken<phantom T0, phantom T1> has drop {}
-
-    public struct LPTokenCap<phantom T0, phantom T1> has key {
+    /// Stores treasury cap
+    public struct LPTokenCap has key, store {
         id: UID,
-        cap: TreasuryCap<LPToken<T0, T1>>
+        cap: TreasuryCap<LP_TOKEN>
     }
 
+    /// Runs once when package is published
+    fun init(witness: LP_TOKEN,ctx: &mut TxContext) {
 
-    public fun create_lp_token<T0, T1>(
-        witness: LPToken<T0, T1>,
-        ctx: &mut TxContext
-    ): LPTokenCap<T0, T1> {
-        
+        let icon = option::some(
+            url::new_unsafe_from_bytes(
+                b"https://res.cloudinary.com/dxflnmfxl/image/upload/v1772266142/Frame_2_nck3gg.png"
+            )
+        );
 
-        let (treasury_cap, metadata) = coin::create_currency<LPToken<T0, T1>>(
+        let (cap, metadata) = coin::create_currency<LP_TOKEN>(
             witness,
             9,
-            b"AQUACOIN",
-            b"Aqua coin",
-            b"LP token for AMM pool",
-            option::none(),
+            b"AQUADEX-LP",
+            b"AquaDex LP Token",
+            b"LP token for Aqua DEX",
+            icon,
             ctx
         );
 
         transfer::public_freeze_object(metadata);
 
-        LPTokenCap {
+        let cap_obj = LPTokenCap {
             id: object::new(ctx),
-            cap: treasury_cap
-        }
+            cap
+        };
+
+        transfer::public_transfer(cap_obj, tx_context::sender(ctx));
     }
 
-    public fun mint_lp_token<T0, T1> (
-        cap: &mut LPTokenCap<T0, T1>,
+    public fun mint_lp_token(
+        cap: &mut LPTokenCap,
         amount: u128,
         ctx: &mut TxContext
-    ): Coin<LPToken<T0, T1>> {
+    ): Coin<LP_TOKEN> {
         coin::mint(&mut cap.cap, amount as u64, ctx)
     }
 
-    public fun burn_lp_token<T0, T1> (
-        cap: &mut LPTokenCap<T0, T1>,
-        coin: Coin<LPToken<T0, T1>>
+    public fun burn_lp_token(
+        cap: &mut LPTokenCap,
+        coin: Coin<LP_TOKEN>
     ) {
         coin::burn(&mut cap.cap, coin);
     }
-    
 }
