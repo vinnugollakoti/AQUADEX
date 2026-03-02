@@ -5,13 +5,14 @@ module aqua_dex::pool {
     use sui::balance::{Self, Balance};
     use sui::math::{Self};
     use aqua_dex::events::{Self};
-
+    use aqua_dex::lp_token::{Self, LPTokenCap, LPToken};
 
     public struct Pool<phantom T0, phantom T1> has key, store {
         id: UID,
         reserve_a : Balance<T0>,
         reserve_b : Balance<T1>,
-        lp_supply: u128
+        lp_supply: u128,
+        lp_cap: LPTokenCap<T0, T1>
     }
 
 
@@ -29,15 +30,23 @@ module aqua_dex::pool {
         let lp_supply = math::sqrt(amount_a * amount_b) as u128;
 
 
+        let witness = lp_token::create_lp_struct<T0, T1>();
+        let mut lp_cap = lp_token::create_lp_token<T0, T1>(witness, ctx);
+
+        let lp_coin = lp_token::mint_lp_token(&mut lp_cap, lp_supply, ctx);
+
         let pool = Pool<T0, T1> {
             id: object::new(ctx),
             reserve_a,
             reserve_b,
-            lp_supply
+            lp_supply,
+            lp_cap
         };
+
         events::emit_pool_created(object::id(&pool));
 
         transfer::public_share_object(pool);
+        transfer::public_transfer(lp_coin, tx_context::sender(ctx));
     }
 
     public fun get_reserves<T0, T1> (
@@ -107,5 +116,20 @@ module aqua_dex::pool {
         amount: u128
     ) {
         pool.lp_supply = pool.lp_supply - amount;
+    }
+
+    public(package) fun mint_lp<T0, T1>(
+        pool: &mut Pool<T0, T1>,
+        amount: u128,
+        ctx: &mut TxContext
+    ): Coin<LPToken<T0, T1>> {
+        lp_token::mint_lp_token(&mut pool.lp_cap, amount, ctx)
+    }
+
+    public(package) fun burn_lp<T0, T1>(
+        pool: &mut Pool<T0, T1>,
+        coin: Coin<LPToken<T0, T1>>
+    ) {
+        lp_token::burn_lp_token(&mut pool.lp_cap, coin)
     }
 }
