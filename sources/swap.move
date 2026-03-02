@@ -16,12 +16,15 @@ module aqua_dex::swap {
         let amount_in = coin::value(&coin_in);
         let (reserve_a, reserve_b) = pool::get_reserves(pool);
 
+        assert!(reserve_a > 0 && reserve_b > 0, 700);
+
         // AMM MATH = x * y = k
         let amount_in_with_fee =amount_in * FEE_NUMERATOR;
         let numerator = amount_in_with_fee * reserve_b;
         let denominator = reserve_a * FEE_DENOMINATOR + amount_in_with_fee;
         let amount_out = numerator / denominator;
 
+        assert!(amount_out > 0, 701);
         assert!(amount_out >= min_amount_out, 401);
 
         let balance_in = coin::into_balance<T0>(coin_in);
@@ -43,13 +46,13 @@ module aqua_dex::swap {
 
 
         let (reserve_a, reserve_b) = pool::get_reserves(pool);
-
+        assert!(reserve_a > 0 && reserve_b > 0, 700);
 
         let amount_in_with_fee = amount_in * FEE_NUMERATOR;
         let numerator = amount_in_with_fee * reserve_a;
         let denominator = reserve_b * FEE_DENOMINATOR + amount_in_with_fee;
         let amount_out = numerator / denominator;
-
+        assert!(amount_out > 0, 701);
         assert!(amount_out >= min_amount_out, 401);
 
         let balance = coin::into_balance<T1>(coin_in);
