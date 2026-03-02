@@ -19,11 +19,13 @@ module aqua_dex::liquidity{
         assert!(amount_a > 0 && amount_b > 0, 0);
 
         let (reserve_a, reserve_b) = pool::get_reserves(pool);
+        assert!(reserve_a > 0 && reserve_b > 0, 602);
         let total_lp = pool::get_total_liquidity(pool);
 
         if (total_lp > 0) {
             assert!(
-                amount_a * reserve_b == amount_b * reserve_a,
+                (amount_a as u128) * (reserve_b as u128)
+                    == (amount_b as u128) * (reserve_a as u128),
                 600
             );
         };
@@ -88,8 +90,9 @@ module aqua_dex::liquidity{
         
         assert!(total_lp > 0, 482);
 
-        let position_amount_a = (lp_amount as u64) * reserve_a / (total_lp as u64);
-        let position_amount_b = (lp_amount as u64) * reserve_b / (total_lp as u64);
+        let position_amount_a = ((lp_amount * (reserve_a as u128)) / total_lp) as u64;
+
+        let position_amount_b = ((lp_amount * (reserve_b as u128)) / total_lp) as u64;
 
 
         if (full_liquidity) {
@@ -104,13 +107,14 @@ module aqua_dex::liquidity{
 
             events::emit_remove_liquidity(object::id(pool), position_amount_a, position_amount_b, (lp_amount) as u64);
             (balance_a, balance_b, option::none())
-            
+
         } else {
             assert!(position_amount_a >= amount_a && position_amount_b >= amount_b, 480);
             assert!(reserve_a > 0 && reserve_b > 0, 481);
 
-            let burn_a = amount_a * (total_lp as u64) / reserve_a;
-            let burn_b = amount_b * (total_lp as u64) / reserve_b;
+            let burn_a = ((amount_a as u128) * total_lp / (reserve_a as u128)) as u64;
+
+            let burn_b = ((amount_b as u128) * total_lp / (reserve_b as u128)) as u64;
 
             let burn_amount = if (burn_a < burn_b) { burn_a } else { burn_b };
             

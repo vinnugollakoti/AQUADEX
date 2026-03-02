@@ -19,10 +19,10 @@ module aqua_dex::swap {
         assert!(reserve_a > 0 && reserve_b > 0, 700);
 
         // AMM MATH = x * y = k
-        let amount_in_with_fee =amount_in * FEE_NUMERATOR;
-        let numerator = amount_in_with_fee * reserve_b;
-        let denominator = reserve_a * FEE_DENOMINATOR + amount_in_with_fee;
-        let amount_out = numerator / denominator;
+        let amount_in_with_fee = (amount_in as u128) * (FEE_NUMERATOR as u128);
+        let numerator = amount_in_with_fee * (reserve_b as u128);
+        let denominator =(reserve_a as u128) * (FEE_DENOMINATOR as u128) + amount_in_with_fee;
+        let amount_out = (numerator / denominator) as u64;
 
         assert!(amount_out > 0, 701);
         assert!(amount_out >= min_amount_out, 401);
@@ -48,10 +48,11 @@ module aqua_dex::swap {
         let (reserve_a, reserve_b) = pool::get_reserves(pool);
         assert!(reserve_a > 0 && reserve_b > 0, 700);
 
-        let amount_in_with_fee = amount_in * FEE_NUMERATOR;
-        let numerator = amount_in_with_fee * reserve_a;
-        let denominator = reserve_b * FEE_DENOMINATOR + amount_in_with_fee;
-        let amount_out = numerator / denominator;
+        let amount_in_with_fee = (amount_in as u128) * (FEE_NUMERATOR as u128);
+        let numerator = amount_in_with_fee * (reserve_a as u128);
+        let denominator = (reserve_b as u128) * (FEE_DENOMINATOR as u128) + amount_in_with_fee;
+        let amount_out =( numerator / denominator) as u64;
+
         assert!(amount_out > 0, 701);
         assert!(amount_out >= min_amount_out, 401);
 
