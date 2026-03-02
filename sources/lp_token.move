@@ -1,15 +1,13 @@
 module aqua_dex::lp_token {
 
-
     use sui::object::{Self, UID};
     use sui::coin::{Self, TreasuryCap, Coin};
     use sui::url;
-    use std::option;
 
 
     public struct LPToken<phantom T0, phantom T1> has drop {}
 
-    public struct LPTokenCap<phantom T0, phantom T1> has key {
+    public struct LPTokenCap<phantom T0, phantom T1> has store, key {
         id: UID,
         cap: TreasuryCap<LPToken<T0, T1>>
     }
@@ -43,6 +41,10 @@ module aqua_dex::lp_token {
         }
     }
 
+    public fun create_lp_struct<T0, T1>(): LPToken<T0, T1> {
+        LPToken<T0, T1> {}
+    }
+
     public fun mint_lp_token<T0, T1> (
         cap: &mut LPTokenCap<T0, T1>,
         amount: u128,
@@ -57,5 +59,4 @@ module aqua_dex::lp_token {
     ) {
         coin::burn(&mut cap.cap, coin);
     }
-    
 }

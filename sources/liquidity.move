@@ -1,26 +1,22 @@
 module aqua_dex::liquidity{
 
-
     use sui::coin::{Self, Coin};
-
-    use aqua_dex::lp_token::{Self, LPToken};
+    use aqua_dex::lp_token::{LPToken};
     use aqua_dex::pool::{Self, Pool};
     use sui::balance::{Balance};
-    use aqua_dex::lp_token::LPTokenCap;
     use aqua_dex::events::{Self};
-    use sui::event;
-
+    
 
     public fun add_liquidity<T0, T1>(
         pool: &mut Pool<T0, T1>,
         coin_a: Coin<T0>,
         coin_b: Coin<T1>,
-        cap: &mut LPTokenCap<T0, T1>,
         ctx: &mut TxContext
     ): Coin<LPToken<T0, T1>> {
 
         let amount_a = coin::value(&coin_a);
         let amount_b = coin::value(&coin_b);
+        assert!(amount_a > 0 && amount_b > 0, 0);
 
         let (reserve_a, reserve_b) = pool::get_reserves(pool);
         let total_lp = pool::get_lp_supply(pool);
@@ -49,7 +45,7 @@ module aqua_dex::liquidity{
 
 
         pool::increase_lp_supply<T0, T1>(pool, lp_to_mint);
-        let lp_coin = lp_token::mint_lp_token<T0, T1>(cap, lp_to_mint, ctx);
+        let lp_coin = pool::mint_lp<T0, T1>(pool, lp_to_mint, ctx);
 
         events::emit_add_liquidity(
             object::id(pool),
@@ -67,7 +63,6 @@ module aqua_dex::liquidity{
         amount_a: u64,
         amount_b: u64,
         lp_coin: Coin<LPToken<T0, T1>>,
-        cap: &mut LPTokenCap<T0, T1>,
         ctx: &mut TxContext
     ): (Balance<T0>, Balance<T1>, Option<Coin<LPToken<T0, T1>>>) {
         let mut lp_coin = lp_coin;
@@ -81,7 +76,7 @@ module aqua_dex::liquidity{
         let position_amount_b = lp_amount * reserve_b / (total_lp as u64);
 
         if (full_liquidity) {
-            lp_token::burn_lp_token(cap, lp_coin);
+            pool::burn_lp(pool, lp_coin);
 
             pool::decrease_lp_supply<T0, T1>(pool, (lp_amount as u128));
 
@@ -101,7 +96,7 @@ module aqua_dex::liquidity{
             
             let burn_lp = coin::split( &mut lp_coin, burn_amount, ctx);
 
-            lp_token::burn_lp_token(cap, burn_lp);
+            pool::burn_lp(pool, burn_lp);
             pool::decrease_lp_supply(pool, burn_amount as u128);
 
             let balance_a = pool::remove_reserve_a<T0, T1>(pool, amount_a);
