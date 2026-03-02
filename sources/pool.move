@@ -27,7 +27,10 @@ module aqua_dex::pool {
         let amount_a = balance::value(&reserve_a);
         let amount_b = balance::value(&reserve_b);
 
-        let total_liquidity = math::sqrt(amount_a * amount_b) as u128;
+        let k = (amount_a as u128) * (amount_b as u128);
+        assert!(amount_a > 0 && amount_b > 0, 100);
+        
+        let total_liquidity = math::sqrt(k as u64) as u128;
 
         assert!(amount_a > 0 && amount_b > 0, 100);
         assert!(total_liquidity > 0, 101);
@@ -63,7 +66,6 @@ module aqua_dex::pool {
         let reserve_x = balance::value(&pool.reserve_a);
         let reserve_y = balance::value(&pool.reserve_b);
         assert!(reserve_x > 0, 800);
-
 
         reserve_y / reserve_x
     }
