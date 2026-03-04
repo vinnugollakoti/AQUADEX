@@ -14,8 +14,8 @@ module aqua_dex::liquidity{
         ctx: &mut TxContext
     ): LPPosition {
 
-        let amount_a = coin::value(&coin_a);
-        let amount_b = coin::value(&coin_b);
+        let mut amount_a = coin::value(&coin_a);
+        let mut amount_b = coin::value(&coin_b);
         assert!(amount_a > 0 && amount_b > 0, 0);
 
         let (reserve_a, reserve_b) = pool::get_reserves(pool);
@@ -23,11 +23,17 @@ module aqua_dex::liquidity{
         let total_lp = pool::get_total_liquidity(pool);
 
         if (total_lp > 0) {
-            assert!(
-                (amount_a as u128) * (reserve_b as u128)
-                    == (amount_b as u128) * (reserve_a as u128),
-                600
-            );
+
+            let optimal_b =
+                ((amount_a as u128) * (reserve_b as u128) / (reserve_a as u128)) as u64;
+
+            if (optimal_b <= amount_b) {
+                amount_b = optimal_b;
+            } else {
+                let optimal_a =
+                    ((amount_b as u128) * (reserve_a as u128) / (reserve_b as u128)) as u64;
+                amount_a = optimal_a;
+            };
         };
 
         let lp_to_mint;

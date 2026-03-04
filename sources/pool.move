@@ -16,6 +16,7 @@ module aqua_dex::pool {
     }
 
 
+
     public fun create_pool<T0, T1>(
         coin_a :  Coin<T0>,
         coin_b : Coin<T1>,
@@ -30,7 +31,7 @@ module aqua_dex::pool {
         let k = (amount_a as u128) * (amount_b as u128);
         assert!(amount_a > 0 && amount_b > 0, 100);
         
-        let total_liquidity = math::sqrt(k as u64) as u128;
+        let total_liquidity = std::u128::sqrt(k);
 
         assert!(amount_a > 0 && amount_b > 0, 100);
         assert!(total_liquidity > 0, 101);
