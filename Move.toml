@@ -8,3 +8,6 @@ edition = "2024"         # edition = "legacy" to use legacy (pre-2024) Move
 # https://docs.sui.io/guides/developer/sui-101/move-package-management
 [environments]
 devnet = "a63d14dc"
+
+[addresses]
+aqua_dex = "0x9df9ef693361f1d9c3dd3e816e44ed897685de3c67498157b6c5669fa97b7fe2"
